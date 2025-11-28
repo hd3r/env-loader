@@ -6,6 +6,18 @@ namespace Hd3r\EnvLoader;
 
 class EnvLoader
 {
+    /**
+     * Load environment variables from a .env file into $_ENV.
+     *
+     * @param string $path Path to the .env file
+     * @param bool $overwrite Whether to overwrite existing $_ENV variables (default: false)
+     * @param array|string $required Required keys - array or comma-separated string
+     *
+     * @throws Exception\FileNotFoundException If file does not exist
+     * @throws Exception\FileNotReadableException If file is not readable
+     * @throws Exception\InvalidKeyException If a key has invalid format
+     * @throws Exception\MissingRequiredKeyException If a required key is missing after loading
+     */
     public static function load(
         string $path,
         bool $overwrite = false,
@@ -32,6 +44,16 @@ class EnvLoader
     }
 
 
+    /**
+     * Parse a .env file and return key-value pairs without setting $_ENV.
+     *
+     * @param string $path Path to the .env file
+     * @return array<string, string> Parsed key-value pairs
+     *
+     * @throws Exception\FileNotFoundException If file does not exist
+     * @throws Exception\FileNotReadableException If file is not readable
+     * @throws Exception\InvalidKeyException If a key has invalid format
+     */
     public static function parse(string $path): array
     {
         if (!file_exists($path)) {
@@ -59,6 +81,17 @@ class EnvLoader
     }
 
 
+    /**
+     * Parse a single line into key-value pair.
+     *
+     * Skips:
+     * - Empty lines
+     * - Comment lines (starting with #)
+     * - Lines without = separator
+     *
+     * @param string $line Raw line from .env file
+     * @return array{0: string, 1: string}|null Key-value pair or null if line should be skipped
+     */
     private static function parseLine(string $line): ?array
     {
         $line = trim($line);
@@ -83,6 +116,17 @@ class EnvLoader
         return [$key, $value];
     }
 
+    /**
+     * Parse value: handle quotes, escaped characters, and inline comments.
+     *
+     * Supports:
+     * - Double quoted values: "value" (with escaped quotes via \")
+     * - Single quoted values: 'value' (no escape processing)
+     * - Unquoted values with inline comment removal (after " #")
+     *
+     * @param string $value Raw value from .env line (everything after =)
+     * @return string Processed value with quotes removed and escapes handled
+     */
     private static function parseValue(string $value): string
     {
         $value = trim($value);
@@ -113,6 +157,15 @@ class EnvLoader
         return $value;
     }
 
+    /**
+     * Validate key format against standard ENV naming rules.
+     *
+     * Valid: MY_KEY, _PRIVATE, DB_HOST_1
+     * Invalid: 123KEY, MY-KEY, MY KEY
+     *
+     * @param string $key Key name to validate
+     * @throws Exception\InvalidKeyException If key format is invalid
+     */
     private static function validateKey(string $key): void
     {
         if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $key)) {

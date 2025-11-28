@@ -46,6 +46,10 @@ class EnvLoaderTest extends TestCase
         return $path;
     }
 
+    // ============================================
+    // Basic Parsing
+    // ============================================
+
     public function testLoadsSimpleKeyValue(): void
     {
         $path = $this->createEnvFile('TEST_KEY=value');
@@ -79,6 +83,19 @@ class EnvLoaderTest extends TestCase
         $this->assertEquals('val=ue=with=equals', $_ENV['TEST_PASSWORD']);
     }
 
+    public function testIgnoresLineWithoutEquals(): void
+    {
+        $path = $this->createEnvFile("INVALID_LINE\nTEST_VALID=value");
+        EnvLoader::load($path);
+
+        $this->assertEquals('value', $_ENV['TEST_VALID']);
+        $this->assertArrayNotHasKey('INVALID_LINE', $_ENV);
+    }
+
+    // ============================================
+    // Quotes
+    // ============================================
+
     public function testLoadsDoubleQuotedValue(): void
     {
         $path = $this->createEnvFile('TEST_QUOTED="hello world"');
@@ -102,6 +119,10 @@ class EnvLoaderTest extends TestCase
 
         $this->assertEquals('hello "world"', $_ENV['TEST_ESCAPED']);
     }
+
+    // ============================================
+    // Comments
+    // ============================================
 
     public function testIgnoresCommentLines(): void
     {
@@ -128,6 +149,10 @@ class EnvLoaderTest extends TestCase
         $this->assertEquals('value with # hash', $_ENV['TEST_QUOTED_COMMENT']);
     }
 
+    // ============================================
+    // Whitespace
+    // ============================================
+
     public function testTrimsWhitespaceAroundKey(): void
     {
         $path = $this->createEnvFile('  TEST_SPACED  =value');
@@ -151,6 +176,10 @@ class EnvLoaderTest extends TestCase
 
         $this->assertEquals('value', $_ENV['TEST_EMPTY_LINES']);
     }
+
+    // ============================================
+    // Options (overwrite, required)
+    // ============================================
 
     public function testDoesNotOverwriteByDefault(): void
     {
@@ -188,6 +217,10 @@ class EnvLoaderTest extends TestCase
         $this->assertEquals('two', $_ENV['TEST_STR_TWO']);
     }
 
+    // ============================================
+    // Exceptions
+    // ============================================
+
     public function testThrowsFileNotFoundException(): void
     {
         $this->expectException(FileNotFoundException::class);
@@ -215,6 +248,28 @@ class EnvLoaderTest extends TestCase
         EnvLoader::load($path, required: ['TEST_MISSING']);
     }
 
+    public function testThrowsFileNotReadableException(): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('chmod not supported on Windows');
+        }
+
+        $path = $this->createEnvFile('TEST_KEY=value');
+        chmod($path, 0000);
+
+        $this->expectException(FileNotReadableException::class);
+
+        try {
+            EnvLoader::load($path);
+        } finally {
+            chmod($path, 0644); // Restore for cleanup
+        }
+    }
+
+    // ============================================
+    // parse() Method
+    // ============================================
+
     public function testParseReturnsArrayWithoutSettingEnv(): void
     {
         $path = $this->createEnvFile("TEST_PARSE_ONE=one\nTEST_PARSE_TWO=two");
@@ -240,32 +295,4 @@ class EnvLoaderTest extends TestCase
 
         $this->assertEquals([], $result);
     }
-
-    public function testThrowsFileNotReadableException(): void
-    {
-        if (PHP_OS_FAMILY === 'Windows') {
-            $this->markTestSkipped('chmod not supported on Windows');
-        }
-
-        $path = $this->createEnvFile('TEST_KEY=value');
-        chmod($path, 0000);
-
-        $this->expectException(FileNotReadableException::class);
-
-        try {
-            EnvLoader::load($path);
-        } finally {
-            chmod($path, 0644); // Restore for cleanup
-        }
-    }
-
-    public function testIgnoresLineWithoutEquals(): void
-    {
-        $path = $this->createEnvFile("INVALID_LINE\nTEST_VALID=value");
-        EnvLoader::load($path);
-
-        $this->assertEquals('value', $_ENV['TEST_VALID']);
-        $this->assertArrayNotHasKey('INVALID_LINE', $_ENV);
-    }
-
 }
