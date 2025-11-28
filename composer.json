@@ -1,0 +1,32 @@
+{
+  "name": "hd3r/env-loader",
+  "description": "Lightweight .env file loader for PHP",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "hd3r",
+      "homepage": "https://github.com/hd3r"
+    }
+  ],
+  "require": {
+    "php": "^8.1"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Hd3r\\EnvLoader\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Hd3r\\EnvLoader\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit",
+    "test:coverage": "vendor/bin/phpunit --coverage-html coverage"
+  }
+}
