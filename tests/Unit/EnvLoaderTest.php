@@ -24,7 +24,8 @@ class EnvLoaderTest extends TestCase
     protected function tearDown(): void
     {
         // Clean up temp files
-        $files = glob($this->tempDir . '/*');
+        $files = glob($this->tempDir . '/{,.}*', GLOB_BRACE);
+        $files = array_filter($files, fn($f) => !in_array(basename($f), ['.', '..']));
         foreach ($files as $file) {
             unlink($file);
         }
