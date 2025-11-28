@@ -241,4 +241,31 @@ class EnvLoaderTest extends TestCase
         $this->assertEquals([], $result);
     }
 
+    public function testThrowsFileNotReadableException(): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('chmod not supported on Windows');
+        }
+
+        $path = $this->createEnvFile('TEST_KEY=value');
+        chmod($path, 0000);
+
+        $this->expectException(FileNotReadableException::class);
+
+        try {
+            EnvLoader::load($path);
+        } finally {
+            chmod($path, 0644); // Restore for cleanup
+        }
+    }
+
+    public function testIgnoresLineWithoutEquals(): void
+    {
+        $path = $this->createEnvFile("INVALID_LINE\nTEST_VALID=value");
+        EnvLoader::load($path);
+
+        $this->assertEquals('value', $_ENV['TEST_VALID']);
+        $this->assertArrayNotHasKey('INVALID_LINE', $_ENV);
+    }
+
 }
