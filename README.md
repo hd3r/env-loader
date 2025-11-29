@@ -1,6 +1,135 @@
 # env-loader
 
-Lightweight .env file loader for PHP.
+Lightweight .env file loader for PHP. Zero dependencies.
+
+## Installation
+
+```bash
+composer require hd3r/env-loader
+```
+
+## Usage
+
+### Basic Usage
+
+```php
+use Hd3r\EnvLoader\EnvLoader;
+
+// Loads .env into $_ENV (does not overwrite existing, no required keys)
+EnvLoader::load(__DIR__ . '/.env');
+
+echo $_ENV['DB_HOST'];
+```
+
+### Options
+
+```php
+// Overwrite existing $_ENV variables
+EnvLoader::load('.env', overwrite: true);
+
+// Require specific keys (throws exception if missing)
+EnvLoader::load('.env', required: ['DB_HOST', 'DB_NAME']);
+
+// Required keys as comma-separated string
+EnvLoader::load('.env', required: 'DB_HOST,DB_NAME');
+
+// Combine options
+EnvLoader::load('.env', overwrite: true, required: ['DB_HOST']);
+```
+
+### Parse Without Loading
+
+```php
+// Returns array without setting $_ENV
+$values = EnvLoader::parse('.env');
+
+print_r($values);
+// ['DB_HOST' => 'localhost', 'DB_NAME' => 'myapp', ...]
+```
+
+## Supported .env Syntax
+
+```env
+# Comments
+DB_HOST=localhost
+
+# Empty values
+EMPTY_VAR=
+
+# Values with equals sign
+PASSWORD=val=ue=with=equals
+
+# Double quotes (supports escaped quotes)
+MESSAGE="Hello World"
+ESCAPED="Say \"Hello\""
+
+# Single quotes (no escape processing)
+SINGLE='Hello World'
+
+# Inline comments
+API_KEY=secret123 # this is ignored
+QUOTED="value with # hash" # comment outside quotes
+
+# Whitespace is trimmed
+  SPACED_KEY  =  value
+```
+
+## Exceptions
+
+All exceptions extend `EnvLoaderException` for easy catching:
+
+```php
+use Hd3r\EnvLoader\EnvLoader;
+use Hd3r\EnvLoader\Exception\EnvLoaderException;
+use Hd3r\EnvLoader\Exception\FileNotFoundException;
+use Hd3r\EnvLoader\Exception\MissingRequiredKeyException;
+
+try {
+    EnvLoader::load('.env', required: ['API_KEY']);
+} catch (FileNotFoundException $e) {
+    // File does not exist
+} catch (MissingRequiredKeyException $e) {
+    // Required key not found
+} catch (EnvLoaderException $e) {
+    // Any other EnvLoader error
+}
+```
+
+| Exception | When |
+|-----------|------|
+| `FileNotFoundException` | File does not exist |
+| `FileNotReadableException` | File exists but not readable |
+| `InvalidKeyException` | Key has invalid format (e.g. `123KEY`, `MY-KEY`) |
+| `MissingRequiredKeyException` | Required key missing after loading |
+
+## Key Naming Rules
+
+Valid keys must:
+- Start with a letter or underscore
+- Contain only letters, numbers, and underscores
+
+```
+DB_HOST      ✓
+_PRIVATE     ✓
+API_KEY_2    ✓
+123KEY       ✗ (starts with number)
+MY-KEY       ✗ (contains hyphen)
+MY KEY       ✗ (contains space)
+```
+
+## When to Use
+
+- Development environments
+- Shared hosting where system ENV is not available
+- Simple projects without framework
+
+## When NOT to Use
+
+- Production with proper system ENV configuration
+- When you need variable expansion (`${OTHER_VAR}`)
+- When you need multiline values
+
+For advanced features, consider [vlucas/phpdotenv](https://github.com/vlucas/phpdotenv).
 
 ## Requirements
 
