@@ -97,9 +97,10 @@ try {
 
 | Exception | When |
 |-----------|------|
-| `FileNotFoundException` | File does not exist |
+| `FileNotFoundException` | File does not exist or is a directory |
 | `FileNotReadableException` | File exists but not readable |
 | `InvalidKeyException` | Key has invalid format (e.g. `123KEY`, `MY-KEY`) |
+| `UnterminatedQuoteException` | Quoted value missing closing quote |
 | `MissingRequiredKeyException` | Required key missing after loading |
 
 ## Key Naming Rules

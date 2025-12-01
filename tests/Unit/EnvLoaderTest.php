@@ -9,6 +9,7 @@ use Hd3r\EnvLoader\Exception\FileNotFoundException;
 use Hd3r\EnvLoader\Exception\FileNotReadableException;
 use Hd3r\EnvLoader\Exception\InvalidKeyException;
 use Hd3r\EnvLoader\Exception\MissingRequiredKeyException;
+use Hd3r\EnvLoader\Exception\UnterminatedQuoteException;
 use PHPUnit\Framework\TestCase;
 
 class EnvLoaderTest extends TestCase
@@ -288,6 +289,20 @@ class EnvLoaderTest extends TestCase
         } finally {
             chmod($path, 0644); // Restore for cleanup
         }
+    }
+
+    public function testThrowsUnterminatedDoubleQuoteException(): void
+    {
+        $path = $this->createEnvFile('TEST_KEY="unterminated');
+        $this->expectException(UnterminatedQuoteException::class);
+        EnvLoader::load($path);
+    }
+
+    public function testThrowsUnterminatedSingleQuoteException(): void
+    {
+        $path = $this->createEnvFile("TEST_KEY='unterminated");
+        $this->expectException(UnterminatedQuoteException::class);
+        EnvLoader::load($path);
     }
 
     // ============================================

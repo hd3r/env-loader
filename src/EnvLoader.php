@@ -16,6 +16,7 @@ class EnvLoader
      * @throws Exception\FileNotFoundException If file does not exist
      * @throws Exception\FileNotReadableException If file is not readable
      * @throws Exception\InvalidKeyException If a key has invalid format
+     * @throws Exception\UnterminatedQuoteException If a quoted value is not properly closed
      * @throws Exception\MissingRequiredKeyException If a required key is missing after loading
      */
     public static function load(
@@ -54,6 +55,7 @@ class EnvLoader
      * @throws Exception\FileNotFoundException If file does not exist
      * @throws Exception\FileNotReadableException If file is not readable
      * @throws Exception\InvalidKeyException If a key has invalid format
+     * @throws Exception\UnterminatedQuoteException If a quoted value is not properly closed
      */
     public static function parse(string $path): array
     {
@@ -131,6 +133,8 @@ class EnvLoader
      *
      * @param string $value Raw value from .env line (everything after =)
      * @return string Processed value with quotes removed and escapes handled
+     *
+     * @throws Exception\UnterminatedQuoteException If a quoted value is not properly closed
      */
     private static function parseValue(string $value): string
     {
@@ -145,6 +149,7 @@ class EnvLoader
             if (preg_match('/^"(.*?)"\s*(#.*)?$/', $value, $matches)) {
                 return stripcslashes($matches[1]);
             }
+            throw new Exception\UnterminatedQuoteException("Unterminated double quote: $value");
         }
 
         // Single quoted
@@ -152,6 +157,7 @@ class EnvLoader
             if (preg_match("/^'(.*?)'\s*(#.*)?$/", $value, $matches)) {
                 return $matches[1];
             }
+            throw new Exception\UnterminatedQuoteException("Unterminated single quote: $value");
         }
 
         // Unquoted - remove inline comment
