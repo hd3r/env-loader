@@ -1,6 +1,7 @@
 {
   "name": "hd3r/env-loader",
   "description": "Lightweight .env file loader for PHP",
+  "keywords": ["env", "dotenv", "environment", "config", "loader"],
   "type": "library",
   "license": "MIT",
   "authors": [

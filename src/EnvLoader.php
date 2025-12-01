@@ -34,6 +34,7 @@ class EnvLoader
         // Handle required keys
         if (is_string($required) && $required !== '') {
             $required = array_map('trim', explode(',', $required));
+            $required = array_filter($required, fn($key) => $key !== '');
         }
 
         foreach ($required as $key) {
@@ -58,6 +59,10 @@ class EnvLoader
     {
         if (!file_exists($path)) {
             throw new Exception\FileNotFoundException("File not found: $path");
+        }
+
+        if (!is_file($path)) {
+            throw new Exception\FileNotFoundException("Not a file: $path");
         }
 
         if (!is_readable($path)) {

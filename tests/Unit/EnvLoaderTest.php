@@ -217,6 +217,24 @@ class EnvLoaderTest extends TestCase
         $this->assertEquals('two', $_ENV['TEST_STR_TWO']);
     }
 
+    public function testRequiredKeysIgnoresTrailingComma(): void
+    {
+        $path = $this->createEnvFile("TEST_TRAIL_ONE=one\nTEST_TRAIL_TWO=two");
+        EnvLoader::load($path, required: 'TEST_TRAIL_ONE,TEST_TRAIL_TWO,');
+
+        $this->assertEquals('one', $_ENV['TEST_TRAIL_ONE']);
+        $this->assertEquals('two', $_ENV['TEST_TRAIL_TWO']);
+    }
+
+    public function testRequiredKeysIgnoresEmptyEntries(): void
+    {
+        $path = $this->createEnvFile("TEST_EMPTY_ONE=one\nTEST_EMPTY_TWO=two");
+        EnvLoader::load($path, required: 'TEST_EMPTY_ONE,,TEST_EMPTY_TWO');
+
+        $this->assertEquals('one', $_ENV['TEST_EMPTY_ONE']);
+        $this->assertEquals('two', $_ENV['TEST_EMPTY_TWO']);
+    }
+
     // ============================================
     // Exceptions
     // ============================================
@@ -225,6 +243,12 @@ class EnvLoaderTest extends TestCase
     {
         $this->expectException(FileNotFoundException::class);
         EnvLoader::load('/nonexistent/path/.env');
+    }
+
+    public function testThrowsFileNotFoundExceptionForDirectory(): void
+    {
+        $this->expectException(FileNotFoundException::class);
+        EnvLoader::load($this->tempDir);
     }
 
     public function testThrowsInvalidKeyException(): void
