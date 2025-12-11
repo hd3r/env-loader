@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed parsing of `.env` files with UTF-8 BOM (Byte Order Mark).
+  Files created with Windows Notepad include a BOM (`\xEF\xBB\xBF`) that caused
+  `InvalidKeyException` on the first key.
+
 ## [1.0.2] - 2024-12-11
 
 ### Fixed

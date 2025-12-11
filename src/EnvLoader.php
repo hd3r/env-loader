@@ -83,6 +83,11 @@ class EnvLoader
         }
         // @codeCoverageIgnoreEnd
 
+        // Strip UTF-8 BOM from first line (common in Windows-created files)
+        if (isset($lines[0])) {
+            $lines[0] = ltrim($lines[0], "\xEF\xBB\xBF");
+        }
+
         $result = [];
 
         foreach ($lines as $line) {

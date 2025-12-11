@@ -59,6 +59,15 @@ class EnvLoaderTest extends TestCase
         $this->assertEquals('value', $_ENV['TEST_KEY']);
     }
 
+    public function testLoadsFileWithUtf8Bom(): void
+    {
+        // UTF-8 BOM: \xEF\xBB\xBF (common in Windows-created files)
+        $path = $this->createEnvFile("\xEF\xBB\xBFTEST_BOM=value");
+        EnvLoader::load($path);
+
+        $this->assertEquals('value', $_ENV['TEST_BOM']);
+    }
+
     public function testLoadsMultipleKeyValues(): void
     {
         $path = $this->createEnvFile("TEST_ONE=first\nTEST_TWO=second");
