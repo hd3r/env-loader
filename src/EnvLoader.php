@@ -11,7 +11,7 @@ class EnvLoader
      *
      * @param string $path Path to the .env file
      * @param bool $overwrite Whether to overwrite existing $_ENV variables (default: false)
-     * @param array|string $required Required keys - array or comma-separated string
+     * @param array<string>|string $required Required keys - array or comma-separated string
      *
      * @throws Exception\FileNotFoundException If file does not exist
      * @throws Exception\FileNotReadableException If file is not readable
@@ -32,10 +32,11 @@ class EnvLoader
             }
         }
 
-        // Handle required keys
-        if (is_string($required) && $required !== '') {
-            $required = array_map('trim', explode(',', $required));
-            $required = array_filter($required, fn($key) => $key !== '');
+        // Handle required keys - normalize to array
+        if (is_string($required)) {
+            $required = $required !== ''
+                ? array_filter(array_map('trim', explode(',', $required)), fn ($key) => $key !== '')
+                : [];
         }
 
         foreach ($required as $key) {
@@ -50,12 +51,13 @@ class EnvLoader
      * Parse a .env file and return key-value pairs without setting $_ENV.
      *
      * @param string $path Path to the .env file
-     * @return array<string, string> Parsed key-value pairs
      *
      * @throws Exception\FileNotFoundException If file does not exist
      * @throws Exception\FileNotReadableException If file is not readable
      * @throws Exception\InvalidKeyException If a key has invalid format
      * @throws Exception\UnterminatedQuoteException If a quoted value is not properly closed
+     *
+     * @return array<string, string> Parsed key-value pairs
      */
     public static function parse(string $path): array
     {
@@ -71,7 +73,16 @@ class EnvLoader
             throw new Exception\FileNotReadableException("File not readable: $path");
         }
 
-        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        // Suppress warning and handle failure explicitly (TOCTOU protection)
+        $lines = @file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+        // @codeCoverageIgnoreStart
+        if ($lines === false) {
+            // Race condition: file was deleted/changed between checks and read
+            throw new Exception\FileNotReadableException("Could not read file: $path");
+        }
+        // @codeCoverageIgnoreEnd
+
         $result = [];
 
         foreach ($lines as $line) {
@@ -97,6 +108,7 @@ class EnvLoader
      * - Lines without = separator
      *
      * @param string $line Raw line from .env file
+     *
      * @return array{0: string, 1: string}|null Key-value pair or null if line should be skipped
      */
     private static function parseLine(string $line): ?array
@@ -113,8 +125,8 @@ class EnvLoader
             return null;
         }
 
-        // Split only on first =
-        $pos = strpos($line, '=');
+        // Split only on first = (str_contains check above guarantees this succeeds)
+        $pos = (int) strpos($line, '=');
         $key = trim(substr($line, 0, $pos));
         $value = substr($line, $pos + 1);
 
@@ -132,9 +144,10 @@ class EnvLoader
      * - Unquoted values with inline comment removal (after " #")
      *
      * @param string $value Raw value from .env line (everything after =)
-     * @return string Processed value with quotes removed and escapes handled
      *
      * @throws Exception\UnterminatedQuoteException If a quoted value is not properly closed
+     *
+     * @return string Processed value with quotes removed and escapes handled
      */
     private static function parseValue(string $value): string
     {
@@ -161,8 +174,9 @@ class EnvLoader
         }
 
         // Unquoted - remove inline comment
-        if (str_contains($value, ' #')) {
-            $value = trim(substr($value, 0, strpos($value, ' #')));
+        $commentPos = strpos($value, ' #');
+        if ($commentPos !== false) {
+            $value = trim(substr($value, 0, $commentPos));
         }
 
         return $value;
@@ -175,6 +189,7 @@ class EnvLoader
      * Invalid: 123KEY, MY-KEY, MY KEY
      *
      * @param string $key Key name to validate
+     *
      * @throws Exception\InvalidKeyException If key format is invalid
      */
     private static function validateKey(string $key): void

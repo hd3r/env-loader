@@ -118,17 +118,44 @@ MY-KEY       ✗ (contains hyphen)
 MY KEY       ✗ (contains space)
 ```
 
+## Why $_ENV Only?
+
+This library intentionally writes **only to `$_ENV`**, not `putenv()` or `$_SERVER`.
+
+**Reason: Thread Safety**
+
+`putenv()` and `getenv()` are **not thread-safe**. In modern PHP runtimes like:
+
+- Swoole
+- RoadRunner
+- FrankenPHP
+- ReactPHP
+
+...concurrent requests can overwrite each other's environment variables, causing hard-to-debug race conditions.
+
+`$_ENV` is process-local and safe. Use `$_ENV['KEY']` instead of `getenv('KEY')` in your application.
+
+```php
+// Safe
+$host = $_ENV['DB_HOST'];
+
+// Not recommended (not set by this loader)
+$host = getenv('DB_HOST');
+```
+
 ## When to Use
 
 - Development environments
 - Shared hosting where system ENV is not available
 - Simple projects without framework
+- **Modern async PHP** (Swoole, RoadRunner, FrankenPHP)
 
 ## When NOT to Use
 
 - Production with proper system ENV configuration
 - When you need variable expansion (`${OTHER_VAR}`)
 - When you need multiline values
+- When you must support legacy code using `getenv()`
 
 For advanced features, consider [vlucas/phpdotenv](https://github.com/vlucas/phpdotenv).
 

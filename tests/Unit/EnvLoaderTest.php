@@ -26,7 +26,7 @@ class EnvLoaderTest extends TestCase
     {
         // Clean up temp files
         $files = glob($this->tempDir . '/{,.}*', GLOB_BRACE);
-        $files = array_filter($files, fn($f) => !in_array(basename($f), ['.', '..']));
+        $files = array_filter($files, fn ($f) => !in_array(basename($f), ['.', '..'], true));
         foreach ($files as $file) {
             unlink($file);
         }
@@ -236,6 +236,14 @@ class EnvLoaderTest extends TestCase
         $this->assertEquals('two', $_ENV['TEST_EMPTY_TWO']);
     }
 
+    public function testRequiredKeysEmptyStringIsNoOp(): void
+    {
+        $path = $this->createEnvFile('TEST_EMPTY_REQ=value');
+        EnvLoader::load($path, required: '');
+
+        $this->assertEquals('value', $_ENV['TEST_EMPTY_REQ']);
+    }
+
     // ============================================
     // Exceptions
     // ============================================
@@ -280,14 +288,14 @@ class EnvLoaderTest extends TestCase
         }
 
         $path = $this->createEnvFile('TEST_KEY=value');
-        chmod($path, 0000);
+        chmod($path, 0o000);
 
         $this->expectException(FileNotReadableException::class);
 
         try {
             EnvLoader::load($path);
         } finally {
-            chmod($path, 0644); // Restore for cleanup
+            chmod($path, 0o644); // Restore for cleanup
         }
     }
 
