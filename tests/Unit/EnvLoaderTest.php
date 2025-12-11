@@ -34,7 +34,7 @@ class EnvLoaderTest extends TestCase
 
         // Reset $_ENV
         foreach (array_keys($_ENV) as $key) {
-            if (str_starts_with($key, 'TEST_')) {
+            if (str_starts_with($key, 'TEST_') || str_starts_with($key, '_TEST_')) {
                 unset($_ENV[$key]);
             }
         }
@@ -93,6 +93,14 @@ class EnvLoaderTest extends TestCase
         $this->assertArrayNotHasKey('INVALID_LINE', $_ENV);
     }
 
+    public function testUnderscoreStartKeyIsValid(): void
+    {
+        $path = $this->createEnvFile('_TEST_PRIVATE=secret');
+        EnvLoader::load($path);
+
+        $this->assertEquals('secret', $_ENV['_TEST_PRIVATE']);
+    }
+
     // ============================================
     // Quotes
     // ============================================
@@ -121,6 +129,30 @@ class EnvLoaderTest extends TestCase
         $this->assertEquals('hello "world"', $_ENV['TEST_ESCAPED']);
     }
 
+    public function testLoadsEscapedBackslash(): void
+    {
+        $path = $this->createEnvFile('TEST_BACKSLASH="path\\\\"');
+        EnvLoader::load($path);
+
+        $this->assertEquals('path\\', $_ENV['TEST_BACKSLASH']);
+    }
+
+    public function testSingleQuoteInDoubleQuotes(): void
+    {
+        $path = $this->createEnvFile('TEST_MIXED="it\'s ok"');
+        EnvLoader::load($path);
+
+        $this->assertEquals("it's ok", $_ENV['TEST_MIXED']);
+    }
+
+    public function testDoubleQuoteInSingleQuotes(): void
+    {
+        $path = $this->createEnvFile("TEST_MIXED_REV='say \"hi\"'");
+        EnvLoader::load($path);
+
+        $this->assertEquals('say "hi"', $_ENV['TEST_MIXED_REV']);
+    }
+
     // ============================================
     // Comments
     // ============================================
@@ -140,6 +172,14 @@ class EnvLoaderTest extends TestCase
         EnvLoader::load($path);
 
         $this->assertEquals('value', $_ENV['TEST_INLINE']);
+    }
+
+    public function testHashWithoutSpaceIsNotComment(): void
+    {
+        $path = $this->createEnvFile('TEST_HASH=value#notacomment');
+        EnvLoader::load($path);
+
+        $this->assertEquals('value#notacomment', $_ENV['TEST_HASH']);
     }
 
     public function testInlineCommentWithQuotes(): void
