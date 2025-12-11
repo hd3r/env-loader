@@ -153,6 +153,38 @@ class EnvLoaderTest extends TestCase
         $this->assertEquals('say "hi"', $_ENV['TEST_MIXED_REV']);
     }
 
+    public function testWindowsPathPreserved(): void
+    {
+        $path = $this->createEnvFile('TEST_PATH="C:\\Users\\name\\docs"');
+        EnvLoader::load($path);
+
+        $this->assertEquals('C:\Users\name\docs', $_ENV['TEST_PATH']);
+    }
+
+    public function testBackslashNPreservedLiterally(): void
+    {
+        $path = $this->createEnvFile('TEST_LITERAL="hello\\nworld"');
+        EnvLoader::load($path);
+
+        $this->assertEquals('hello\nworld', $_ENV['TEST_LITERAL']);
+    }
+
+    public function testBackslashTPreservedLiterally(): void
+    {
+        $path = $this->createEnvFile('TEST_TAB="hello\\tworld"');
+        EnvLoader::load($path);
+
+        $this->assertEquals('hello\tworld', $_ENV['TEST_TAB']);
+    }
+
+    public function testBackslashRPreservedLiterally(): void
+    {
+        $path = $this->createEnvFile('TEST_CR="hello\\rworld"');
+        EnvLoader::load($path);
+
+        $this->assertEquals('hello\rworld', $_ENV['TEST_CR']);
+    }
+
     // ============================================
     // Comments
     // ============================================

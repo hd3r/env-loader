@@ -160,7 +160,7 @@ class EnvLoader
         // Double quoted
         if (str_starts_with($value, '"')) {
             if (preg_match('/^"(.*?)"\s*(#.*)?$/', $value, $matches)) {
-                return stripcslashes($matches[1]);
+                return self::unescapeDoubleQuoted($matches[1]);
             }
             throw new Exception\UnterminatedQuoteException("Unterminated double quote: $value");
         }
@@ -197,5 +197,31 @@ class EnvLoader
         if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $key)) {
             throw new Exception\InvalidKeyException("Invalid key: $key");
         }
+    }
+
+    /**
+     * Unescape double-quoted value.
+     *
+     * Only handles:
+     * - \\ -> \ (escaped backslash)
+     * - \" -> " (escaped quote)
+     *
+     * Other escape sequences (like \n, \t) are preserved literally.
+     * This prevents data corruption with Windows paths like C:\new\path.
+     *
+     * @param string $value Raw value from inside double quotes
+     *
+     * @return string Unescaped value
+     */
+    private static function unescapeDoubleQuoted(string $value): string
+    {
+        return preg_replace_callback(
+            '/\\\\(.)/',
+            fn (array $m): string => match ($m[1]) {
+                '\\', '"' => $m[1],
+                default => '\\' . $m[1],
+            },
+            $value
+        ) ?? $value;
     }
 }
