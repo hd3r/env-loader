@@ -368,6 +368,10 @@ class EnvLoaderTest extends TestCase
             $this->markTestSkipped('chmod not supported on Windows');
         }
 
+        if (function_exists('posix_getuid') && posix_getuid() === 0) {
+            $this->markTestSkipped('Root can read any file regardless of permissions');
+        }
+
         $path = $this->createEnvFile('TEST_KEY=value');
         chmod($path, 0o000);
 
