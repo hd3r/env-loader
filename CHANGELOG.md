@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2024-12-14
+
 ### Fixed
 - Fixed parsing of `.env` files with UTF-8 BOM (Byte Order Mark).
   Files created with Windows Notepad include a BOM (`\xEF\xBB\xBF`) that caused
